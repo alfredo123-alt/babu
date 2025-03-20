@@ -1,0 +1,101 @@
+Ci=Ek(Pi⊕Ci−1)
+Pi=Dk(Ci)⊕Ci−1
+​
+START  
+INPUT plaintext  
+CHOOSE a random IV  
+DIVIDE plaintext into 64-bit blocks  
+FOR each block:  
+    XOR plaintext block with previous ciphertext block  
+    ENCRYPT using 3DES  
+    STORE result as new ciphertext block  
+PRINT encrypted message  
+
+FOR decryption:  
+    FOR each ciphertext block:  
+        DECRYPT using 3DES  
+        XOR with previous ciphertext block to get plaintext  
+PRINT decrypted message  
+STOP  
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <openssl/des.h>
+
+// Generate a random IV (Initialization Vector)
+void generateIV(DES_cblock *iv) {
+    for (int i = 0; i < 8; i++)
+        (*iv)[i] = rand() % 256;
+}
+
+// Encrypts using 3DES in CBC mode
+void encrypt3DES_CBC(const char *plaintext, const char *key, DES_cblock *iv, unsigned char *ciphertext) {
+    DES_key_schedule ks1, ks2, ks3;
+    DES_set_key_unchecked((DES_cblock *)key, &ks1);
+    DES_set_key_unchecked((DES_cblock *)(key + 8), &ks2);
+    DES_set_key_unchecked((DES_cblock *)(key + 16), &ks3);
+
+    DES_ncbc_encrypt((unsigned char *)plaintext, ciphertext, strlen(plaintext), &ks1, iv, DES_ENCRYPT);
+}
+
+// Decrypts using 3DES in CBC mode
+void decrypt3DES_CBC(const unsigned char *ciphertext, int len, const char *key, DES_cblock *iv, unsigned char *plaintext) {
+    DES_key_schedule ks1, ks2, ks3;
+    DES_set_key_unchecked((DES_cblock *)key, &ks1);
+    DES_set_key_unchecked((DES_cblock *)(key + 8), &ks2);
+    DES_set_key_unchecked((DES_cblock *)(key + 16), &ks3);
+
+    DES_ncbc_encrypt(ciphertext, plaintext, len, &ks1, iv, DES_DECRYPT);
+}
+
+int main() {
+    DES_cblock iv;
+    generateIV(&iv);
+
+    const char *key = "0123456789abcdef0123456789abcdef";
+    const char *plaintext = "HELLO CBC MODE";
+    unsigned char ciphertext[128], decrypted[128];
+
+    encrypt3DES_CBC(plaintext, key, &iv, ciphertext);
+    printf("Encrypted Text: %s\n", ciphertext);
+
+    decrypt3DES_CBC(ciphertext, strlen(plaintext), key, &iv, decrypted);
+    decrypted[strlen(plaintext)] = '\0'; // Null-terminate the decrypted string
+
+    printf("Decrypted Text: %s\n", decrypted);
+    return 0;
+}
+
+
+
+from Crypto.Cipher import DES3
+from Crypto.Random import get_random_bytes
+
+def pad(text):
+    while len(text) % 8 != 0:
+        text += ' '  # Padding to make length a multiple of 8
+    return text
+
+def encrypt_3des_cbc(plaintext, key, iv):
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+    return cipher.encrypt(pad(plaintext).encode())
+
+def decrypt_3des_cbc(ciphertext, key, iv):
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+    return cipher.decrypt(ciphertext).decode().strip()
+
+# Generate a random IV (8 bytes) and key (24 bytes)
+key = get_random_bytes(24)
+iv = get_random_bytes(8)
+plaintext = "HELLO CBC MODE"
+
+# Encrypt
+ciphertext = encrypt_3des_cbc(plaintext, key, iv)
+print("Encrypted:", ciphertext)
+
+# Decrypt
+decrypted_text = decrypt_3des_cbc(ciphertext, key, iv)
+print("Decrypted:", decrypted_text)
