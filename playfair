@@ -1,0 +1,167 @@
+Same Row: Letters are replaced with the next right letter.
+Same Column: Letters are replaced with the one below.
+Rectangle Rule: Letters swap diagonally in the matrix.
+
+
+
+
+START  
+INPUT keyword  
+CONSTRUCT 5×5 matrix using the keyword  
+INPUT plaintext  
+PROCESS plaintext (remove 'J', insert 'X' if needed)  
+FOR each letter pair in plaintext:  
+    FIND positions in the 5×5 matrix  
+    APPLY Playfair encryption rules (row, column, rectangle)  
+PRINT encrypted text  
+STOP  
+
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define SIZE 5
+char matrix[SIZE][SIZE];
+
+// Function to create Playfair matrix from keyword
+void createMatrix(char key[]) {
+    int used[26] = {0}, row = 0, col = 0;
+    for (int i = 0; key[i] != '\0'; i++) {
+        char ch = toupper(key[i] == 'J' ? 'I' : key[i]);
+        if (!used[ch - 'A']) matrix[row][col++] = ch, used[ch - 'A'] = 1;
+        if (col == SIZE) row++, col = 0;
+    }
+    for (char ch = 'A'; ch <= 'Z'; ch++) {
+        if (ch == 'J') continue;
+        if (!used[ch - 'A']) matrix[row][col++] = ch, used[ch - 'A'] = 1;
+        if (col == SIZE) row++, col = 0;
+    }
+}
+
+// Function to find row & column of a character
+void findPos(char ch, int *row, int *col) {
+    if (ch == 'J') ch = 'I';
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++)
+            if (matrix[i][j] == ch) *row = i, *col = j;
+}
+
+// Function to encrypt a plaintext pair
+void encryptPair(char *a, char *b) {
+    int r1, c1, r2, c2;
+    findPos(*a, &r1, &c1);
+    findPos(*b, &r2, &c2);
+    *a = (r1 == r2) ? matrix[r1][(c1 + 1) % SIZE] : (c1 == c2) ? matrix[(r1 + 1) % SIZE][c1] : matrix[r1][c2];
+    *b = (r1 == r2) ? matrix[r2][(c2 + 1) % SIZE] : (c1 == c2) ? matrix[(r2 + 1) % SIZE][c2] : matrix[r2][c1];
+}
+
+// Function to format and encrypt the plaintext
+void playfairEncrypt(char text[]) {
+    char formatted[100]; int len = 0;
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) formatted[len++] = toupper(text[i] == 'J' ? 'I' : text[i]);
+        if (len > 1 && formatted[len - 1] == formatted[len - 2]) formatted[len++] = 'X';
+    }
+    if (len % 2) formatted[len++] = 'X';
+    formatted[len] = '\0';
+
+    for (int i = 0; i < len; i += 2) encryptPair(&formatted[i], &formatted[i + 1]);
+
+    printf("Encrypted Text: %s\n", formatted);
+}
+
+// Main function
+int main() {
+    char key[50], text[100];
+    printf("Enter keyword: "), scanf("%s", key);
+    createMatrix(key);
+    printf("Enter plaintext: "), scanf(" %[^\n]", text);
+    playfairEncrypt(text);
+    return 0;
+}
+
+
+
+Playfair Cipher
+SIZE = 5
+
+# Function to create Playfair matrix from keyword
+def create_matrix(key):
+    key = key.upper().replace("J", "I")
+    used = set()
+    matrix = []
+    
+    # Insert unique letters from key
+    for ch in key:
+        if ch.isalpha() and ch not in used:
+            used.add(ch)
+            matrix.append(ch)
+
+    # Insert remaining letters of the alphabet
+    for ch in "ABCDEFGHIKLMNOPQRSTUVWXYZ":
+        if ch not in used:
+            used.add(ch)
+            matrix.append(ch)
+
+    # Convert to 5x5 matrix
+    return [matrix[i * SIZE:(i + 1) * SIZE] for i in range(SIZE)]
+
+# Function to find row & column of a character
+def find_pos(matrix, ch):
+    for r in range(SIZE):
+        for c in range(SIZE):
+            if matrix[r][c] == ch:
+                return r, c
+    return None
+
+# Function to encrypt a plaintext pair
+def encrypt_pair(matrix, a, b):
+    r1, c1 = find_pos(matrix, a)
+    r2, c2 = find_pos(matrix, b)
+
+    if r1 == r2:  # Same row
+        return matrix[r1][(c1 + 1) % SIZE], matrix[r2][(c2 + 1) % SIZE]
+    elif c1 == c2:  # Same column
+        return matrix[(r1 + 1) % SIZE][c1], matrix[(r2 + 1) % SIZE][c2]
+    else:  # Rectangle swap
+        return matrix[r1][c2], matrix[r2][c1]
+
+# Function to format and encrypt the plaintext
+def playfair_encrypt(text, matrix):
+    text = text.upper().replace("J", "I")
+    formatted = []
+    
+    # Format text by removing spaces and adding 'X' where necessary
+    i = 0
+    while i < len(text):
+        if text[i].isalpha():
+            if i + 1 < len(text) and text[i] == text[i + 1]:
+                formatted.append(text[i])
+                formatted.append('X')
+                i += 1
+            else:
+                formatted.append(text[i])
+                if i + 1 < len(text) and text[i + 1].isalpha():
+                    formatted.append(text[i + 1])
+                else:
+                    formatted.append('X')  # If single at the end, add 'X'
+                i += 1
+        i += 1
+
+    # Encrypt the formatted text
+    encrypted_text = ""
+    for i in range(0, len(formatted), 2):
+        a, b = encrypt_pair(matrix, formatted[i], formatted[i + 1])
+        encrypted_text += a + b
+
+    return encrypted_text
+
+# Main function
+key = input("Enter keyword: ")
+matrix = create_matrix(key)
+
+text = input("Enter plaintext: ")
+encrypted_text = playfair_encrypt(text, matrix)
+
+print("Encrypted Text:", encrypted_text)
