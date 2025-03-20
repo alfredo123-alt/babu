@@ -1,0 +1,103 @@
+Ci=ES−DES(Pi⊕Ci−1)
+Pi=DS−DES(Ci)⊕Ci−1
+​
+
+START  
+INPUT binary key  
+GENERATE subkeys K1 and K2  
+
+INPUT plaintext  
+DIVIDE plaintext into 8-bit blocks  
+SET IV = 10101010  
+
+FOR each plaintext block P_i:  
+    P_i = P_i XOR previous_ciphertext  
+    C_i = S-DES_Encrypt(P_i, K1, K2)  
+    STORE C_i as previous_ciphertext  
+
+PRINT encrypted ciphertext  
+
+FOR each ciphertext block C_i:  
+    P_i = S-DES_Decrypt(C_i, K1, K2)  
+    P_i = P_i XOR previous_ciphertext  
+    STORE P_i as decrypted plaintext  
+
+PRINT decrypted plaintext  
+STOP  
+
+
+#include <stdio.h>
+#include <stdint.h>
+
+#define BLOCK_SIZE 8  // 8-bit blocks for S-DES
+
+// Function to perform XOR operation on two 8-bit values
+uint8_t xorBlocks(uint8_t a, uint8_t b) {
+    return a ^ b;
+}
+
+// Simplified DES Key Scheduling (Stub: Use real S-DES key scheduling)
+void generateKeys(uint16_t key, uint8_t *K1, uint8_t *K2) {
+    *K1 = (key >> 5) & 0xFF;  // Example subkey generation
+    *K2 = key & 0xFF;
+}
+
+// S-DES Encryption (Stub: Use actual S-DES implementation)
+uint8_t sdesEncrypt(uint8_t plaintext, uint8_t K1, uint8_t K2) {
+    return (plaintext ^ K1) + K2;  // Placeholder encryption logic
+}
+
+// S-DES Decryption (Stub: Use actual S-DES implementation)
+uint8_t sdesDecrypt(uint8_t ciphertext, uint8_t K1, uint8_t K2) {
+    return (ciphertext - K2) ^ K1;  // Placeholder decryption logic
+}
+
+// CBC Mode Encryption
+void cbcEncrypt(uint8_t *plaintext, uint8_t *ciphertext, uint8_t numBlocks, uint8_t K1, uint8_t K2, uint8_t IV) {
+    uint8_t previousCipher = IV;
+
+    for (int i = 0; i < numBlocks; i++) {
+        uint8_t block = xorBlocks(plaintext[i], previousCipher);
+        ciphertext[i] = sdesEncrypt(block, K1, K2);
+        previousCipher = ciphertext[i];  // Update previous ciphertext
+    }
+}
+
+// CBC Mode Decryption
+void cbcDecrypt(uint8_t *ciphertext, uint8_t *decrypted, uint8_t numBlocks, uint8_t K1, uint8_t K2, uint8_t IV) {
+    uint8_t previousCipher = IV;
+
+    for (int i = 0; i < numBlocks; i++) {
+        uint8_t decryptedBlock = sdesDecrypt(ciphertext[i], K1, K2);
+        decrypted[i] = xorBlocks(decryptedBlock, previousCipher);
+        previousCipher = ciphertext[i];  // Update previous ciphertext
+    }
+}
+
+int main() {
+    uint16_t key = 0b0111111110; // 10-bit binary key
+    uint8_t plaintext[] = {0b00000001, 0b00100011};  // Given plaintext
+    uint8_t ciphertext[2], decrypted[2];
+    uint8_t IV = 0b10101010;  // Given IV
+    uint8_t K1, K2;
+
+    generateKeys(key, &K1, &K2);
+
+    printf("Original Plaintext: ");
+    for (int i = 0; i < 2; i++) printf("%08b ", plaintext[i]);
+    printf("\n");
+
+    // Encrypt
+    cbcEncrypt(plaintext, ciphertext, 2, K1, K2, IV);
+    printf("Encrypted Ciphertext: ");
+    for (int i = 0; i < 2; i++) printf("%08b ", ciphertext[i]);
+    printf("\n");
+
+    // Decrypt
+    cbcDecrypt(ciphertext, decrypted, 2, K1, K2, IV);
+    printf("Decrypted Plaintext: ");
+    for (int i = 0; i < 2; i++) printf("%08b ", decrypted[i]);
+    printf("\n");
+
+    return 0;
+}
