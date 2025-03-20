@@ -1,0 +1,93 @@
+Li=Ri−1
+Ri=Li−1⊕f(Ri−1,Ki)
+​
+
+
+  START  
+INPUT 64-bit ciphertext  
+GENERATE 16 subkeys using key-scheduling algorithm  
+REVERSE the order of subkeys for decryption  
+APPLY Initial Permutation (IP)  
+SPLIT data into L and R halves  
+FOR i = 16 down to 1:  
+    EXPAND R (32-bit to 48-bit)  
+    XOR with subkey Ki  
+    APPLY S-Box substitution (48-bit → 32-bit)  
+    APPLY P-Box permutation  
+    COMPUTE new R = L ⊕ f(R, Ki)  
+    SWAP L and R  
+APPLY Final Permutation (FP)  
+PRINT decrypted plaintext  
+STOP  
+
+
+
+
+  #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Simplified version of DES decryption key scheduling (Reverse order of subkeys)
+void generateKeys(char keys[16][48], char originalKey[56]) {
+    for (int i = 0; i < 16; i++) {
+        // Perform key scheduling (Shift & Permute)
+        // Skipping full key scheduling for simplicity
+        strncpy(keys[i], originalKey, 48);
+    }
+}
+
+// Simplified DES Feistel function
+void feistelFunction(char right[32], char subkey[48], char output[32]) {
+    for (int i = 0; i < 32; i++) {
+        output[i] = right[i] ^ subkey[i % 48]; // Basic XOR for simplification
+    }
+}
+
+// DES decryption process
+void desDecrypt(char ciphertext[64], char originalKey[56]) {
+    char keys[16][48], left[32], right[32], temp[32];
+
+    generateKeys(keys, originalKey);
+
+    // Split into left and right halves
+    strncpy(left, ciphertext, 32);
+    strncpy(right, ciphertext + 32, 32);
+
+    // Perform 16 rounds in REVERSE order
+    for (int i = 15; i >= 0; i--) {
+        strncpy(temp, right, 32);
+        feistelFunction(right, keys[i], right);
+
+        for (int j = 0; j < 32; j++)
+            right[j] ^= left[j]; // XOR with left half
+
+        strncpy(left, temp, 32); // Swap left and right
+    }
+
+    // Final permutation (Skipping full FP table for simplicity)
+    printf("Decrypted Plaintext: %s\n", left);
+}
+
+int main() {
+    char ciphertext[64] = "1010100110011010"; // Example ciphertext (binary)
+    char key[56] = "1101010010110100"; // Example key (binary)
+
+    desDecrypt(ciphertext, key);
+    return 0;
+}
+
+
+
+from Crypto.Cipher import DES
+
+def des_decrypt(ciphertext, key):
+    cipher = DES.new(key, DES.MODE_ECB)
+    plaintext = cipher.decrypt(ciphertext)
+    return plaintext.decode().strip()
+
+# Example: 8-byte ciphertext and 8-byte key
+key = b"mysecret"
+ciphertext = b"\x85\xa2\x13\xfd\x92\x1d\xcd\x67"
+
+decrypted_text = des_decrypt(ciphertext, key)
+print("Decrypted Text:", decrypted_text)
