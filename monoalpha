@@ -1,0 +1,114 @@
+START  
+1. DEFINE Plaintext alphabet (A-Z).  
+2. DEFINE Ciphertext alphabet (shuffled A-Z).  
+3. INPUT plaintext.  
+4. FOR each character in plaintext:  
+     - FIND its position in the plaintext alphabet.  
+     - REPLACE it with the corresponding character from the ciphertext alphabet.  
+5. PRINT the encrypted text.  
+6. TO DECRYPT: Reverse the process.  
+STOP  
+
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+// Define the plaintext and ciphertext alphabets
+char plainAlphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+char cipherAlphabet[] = "QWERTYUIOPASDFGHJKLZXCVBNM"; // Example shuffled alphabet
+
+// Function to encrypt plaintext using the monoalphabetic cipher
+void encrypt(char text[]) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            char upper = toupper(text[i]);  // Convert to uppercase
+            for (int j = 0; j < 26; j++) {
+                if (plainAlphabet[j] == upper) {
+                    text[i] = islower(text[i]) ? tolower(cipherAlphabet[j]) : cipherAlphabet[j];
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// Function to decrypt ciphertext back to plaintext
+void decrypt(char text[]) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            char upper = toupper(text[i]);  // Convert to uppercase
+            for (int j = 0; j < 26; j++) {
+                if (cipherAlphabet[j] == upper) {
+                    text[i] = islower(text[i]) ? tolower(plainAlphabet[j]) : plainAlphabet[j];
+                    break;
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    char text[100];
+
+    printf("Enter plaintext: ");
+    fgets(text, sizeof(text), stdin);
+    text[strcspn(text, "\n")] = 0; // Remove newline character
+
+    // Encrypt the input text
+    encrypt(text);
+    printf("Encrypted Text: %s\n", text);
+
+    // Decrypt the encrypted text
+    decrypt(text);
+    printf("Decrypted Text: %s\n", text);
+
+    return 0;
+}
+
+
+
+
+
+
+Monoalphabetic Cipher
+# Define the plaintext and ciphertext alphabets
+plain_alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+cipher_alphabet = "QWERTYUIOPASDFGHJKLZXCVBNM"  # Example shuffled alphabet
+
+# Function to encrypt plaintext using the monoalphabetic cipher
+def encrypt(text):
+    encrypted_text = ""
+    for char in text:
+        if char.isalpha():
+            upper = char.upper()
+            index = plain_alphabet.index(upper)
+            new_char = cipher_alphabet[index]
+            encrypted_text += new_char.lower() if char.islower() else new_char
+        else:
+            encrypted_text += char  # Keep spaces and punctuation unchanged
+    return encrypted_text
+
+# Function to decrypt ciphertext back to plaintext
+def decrypt(text):
+    decrypted_text = ""
+    for char in text:
+        if char.isalpha():
+            upper = char.upper()
+            index = cipher_alphabet.index(upper)
+            new_char = plain_alphabet[index]
+            decrypted_text += new_char.lower() if char.islower() else new_char
+        else:
+            decrypted_text += char  # Keep spaces and punctuation unchanged
+    return decrypted_text
+
+# Taking input from user
+text = input("Enter plaintext: ")
+
+# Encrypt the input text
+encrypted_text = encrypt(text)
+print("Encrypted Text:", encrypted_text)
+
+# Decrypt the encrypted text
+decrypted_text = decrypt(encrypted_text)
+print("Decrypted Text:", decrypted_text)
