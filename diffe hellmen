@@ -1,0 +1,85 @@
+secret  key
+YA=a''xA mod q
+YB=a''xB mod q
+
+shared key
+SA=YB''xA mod q
+SB=YA''xB mod q
+
+START  
+INPUT prime number q and primitive root a  
+Alice selects secret x_A and computes Y_A = (a^x_A) mod q  
+Bob selects secret x_B and computes Y_B = (a^x_B) mod q  
+Alice sends Y_A to Bob, Bob sends Y_B to Alice  
+Alice computes shared key S_A = (Y_B^x_A) mod q  
+Bob computes shared key S_B = (Y_A^x_B) mod q  
+PRINT shared key (S_A == S_B)  
+STOP  
+
+
+#include <stdio.h>
+#include <math.h>
+
+// Function to compute (base^exp) % mod
+long long powerMod(long long base, long long exp, long long mod) {
+    long long result = 1;
+    base = base % mod;
+    while (exp > 0) {
+        if (exp % 2 == 1) result = (result * base) % mod;
+        exp = exp >> 1;
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+int main() {
+    long long q = 23;  // Prime number
+    long long a = 5;   // Primitive root of q
+
+    // Alice's secret
+    long long x_A = 6;  
+    long long Y_A = powerMod(a, x_A, q);  // Alice computes public key
+
+    // Bob's secret
+    long long x_B = 15;  
+    long long Y_B = powerMod(a, x_B, q);  // Bob computes public key
+
+    // Key exchange
+    long long S_A = powerMod(Y_B, x_A, q);  // Alice computes shared secret
+    long long S_B = powerMod(Y_A, x_B, q);  // Bob computes shared secret
+
+    printf("Alice's Shared Key: %lld\n", S_A);
+    printf("Bob's Shared Key: %lld\n", S_B);
+
+    return 0;
+}
+
+
+def power_mod(base, exp, mod):
+    result = 1
+    base = base % mod
+    while exp > 0:
+        if exp % 2 == 1:
+            result = (result * base) % mod
+        exp = exp >> 1
+        base = (base * base) % mod
+    return result
+
+# Public parameters
+q = 23  # Prime number
+a = 5   # Primitive root of q
+
+# Alice selects a secret number
+x_A = 6
+Y_A = power_mod(a, x_A, q)
+
+# Bob selects a secret number
+x_B = 15
+Y_B = power_mod(a, x_B, q)
+
+# Exchange and compute shared key
+S_A = power_mod(Y_B, x_A, q)  # Alice computes shared key
+S_B = power_mod(Y_A, x_B, q)  # Bob computes shared key
+
+print(f"Alice's Shared Key: {S_A}")
+print(f"Bob's Shared Key: {S_B}")
