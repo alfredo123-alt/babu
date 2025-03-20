@@ -1,0 +1,178 @@
+ECB → Encrypt each block individually (Fast but insecure).
+CBC → XOR with previous ciphertext, then encrypt (More secure).
+CFB → Encrypt IV, then XOR with plaintext (Used for streaming).
+
+START
+INPUT plaintext
+PAD plaintext to be a multiple of BLOCK_SIZE
+CHOOSE encryption mode (ECB, CBC, CFB)
+GENERATE 16-byte AES key
+IF CBC or CFB mode THEN
+    GENERATE 16-byte IV (random)
+END IF
+encryption
+ECB Mode:
+FOR each BLOCK in plaintext:
+    ENCRYPT block using AES with key
+STORE encrypted blocks as ciphertext
+CBC Mode:
+SET previous_ciphertext = IV
+FOR each BLOCK in plaintext:
+    XOR block with previous_ciphertext
+    ENCRYPT result using AES
+    STORE result as ciphertext block
+    UPDATE previous_ciphertext = ciphertext block
+CFB Mode:
+SET previous_ciphertext = IV
+FOR each BLOCK in plaintext:
+    ENCRYPT previous_ciphertext using AES
+    XOR result with plaintext block to get ciphertext block
+    STORE ciphertext block
+    UPDATE previous_ciphertext = ciphertext block
+decryption
+ECB Mode:
+FOR each BLOCK in ciphertext:
+    DECRYPT block using AES with key
+STORE decrypted blocks as plaintext
+REMOVE padding
+CBC Mode:
+SET previous_ciphertext = IV
+FOR each BLOCK in ciphertext:
+    DECRYPT block using AES
+    XOR result with previous_ciphertext to get plaintext block
+    STORE plaintext block
+    UPDATE previous_ciphertext = ciphertext block
+REMOVE padding
+CFB Mode:
+SET previous_ciphertext = IV
+FOR each BLOCK in ciphertext:
+    ENCRYPT previous_ciphertext using AES
+    XOR result with ciphertext block to get plaintext block
+    STORE plaintext block
+    UPDATE previous_ciphertext = ciphertext block
+
+PRINT ciphertext
+PRINT decrypted plaintext
+STOP
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <openssl/aes.h>
+#include <openssl/rand.h>
+
+#define BLOCK_SIZE 16  // AES block size (128 bits)
+
+// Function to pad plaintext to be a multiple of BLOCK_SIZE
+void padText(unsigned char *plaintext, int *len) {
+    int padding = BLOCK_SIZE - (*len % BLOCK_SIZE);
+    for (int i = *len; i < *len + padding; i++) {
+        plaintext[i] = padding;  // Padding with the number of padding bytes
+    }
+    *len += padding;
+}
+
+// Function to encrypt using ECB mode
+void encryptECB(const unsigned char *plaintext, unsigned char *ciphertext, AES_KEY *aesKey, int len) {
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        AES_encrypt(plaintext + i, ciphertext + i, aesKey);
+    }
+}
+
+// Function to decrypt using ECB mode
+void decryptECB(const unsigned char *ciphertext, unsigned char *plaintext, AES_KEY *aesKey, int len) {
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        AES_decrypt(ciphertext + i, plaintext + i, aesKey);
+    }
+}
+
+// Function to encrypt using CBC mode
+void encryptCBC(const unsigned char *plaintext, unsigned char *ciphertext, AES_KEY *aesKey, unsigned char *iv, int len) {
+    unsigned char tempIv[BLOCK_SIZE];
+    memcpy(tempIv, iv, BLOCK_SIZE); // Copy IV
+
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            ciphertext[i + j] = plaintext[i + j] ^ tempIv[j];  // XOR with IV
+        }
+        AES_encrypt(ciphertext + i, ciphertext + i, aesKey);
+        memcpy(tempIv, ciphertext + i, BLOCK_SIZE);  // Update IV
+    }
+}
+
+// Function to decrypt using CBC mode
+void decryptCBC(const unsigned char *ciphertext, unsigned char *plaintext, AES_KEY *aesKey, unsigned char *iv, int len) {
+    unsigned char tempIv[BLOCK_SIZE], tempBlock[BLOCK_SIZE];
+    memcpy(tempIv, iv, BLOCK_SIZE);
+
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        AES_decrypt(ciphertext + i, tempBlock, aesKey);
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            plaintext[i + j] = tempBlock[j] ^ tempIv[j];  // XOR with IV
+        }
+        memcpy(tempIv, ciphertext + i, BLOCK_SIZE);
+    }
+}
+
+// Function to encrypt using CFB mode
+void encryptCFB(const unsigned char *plaintext, unsigned char *ciphertext, AES_KEY *aesKey, unsigned char *iv, int len) {
+    unsigned char tempIv[BLOCK_SIZE];
+    memcpy(tempIv, iv, BLOCK_SIZE);
+
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        AES_encrypt(tempIv, tempIv, aesKey);
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            ciphertext[i + j] = plaintext[i + j] ^ tempIv[j];
+            tempIv[j] = ciphertext[i + j];  // Shift IV forward
+        }
+    }
+}
+
+// Function to decrypt using CFB mode
+void decryptCFB(const unsigned char *ciphertext, unsigned char *plaintext, AES_KEY *aesKey, unsigned char *iv, int len) {
+    unsigned char tempIv[BLOCK_SIZE], tempBlock[BLOCK_SIZE];
+    memcpy(tempIv, iv, BLOCK_SIZE);
+
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        AES_encrypt(tempIv, tempBlock, aesKey);
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            plaintext[i + j] = ciphertext[i + j] ^ tempBlock[j];
+            tempIv[j] = ciphertext[i + j];  // Shift IV forward
+        }
+    }
+}
+
+int main() {
+    unsigned char key[BLOCK_SIZE] = "1234567890123456";  // 16-byte AES key
+    unsigned char iv[BLOCK_SIZE];
+    RAND_bytes(iv, BLOCK_SIZE); // Generate a random IV
+
+    unsigned char plaintext[64] = "HELLO AES MODES"; // Example plaintext
+    int len = strlen((char *)plaintext);
+
+    // Pad the plaintext
+    padText(plaintext, &len);
+
+    unsigned char ciphertext[64], decrypted[64];
+
+    AES_KEY aesKey;
+    AES_set_encrypt_key(key, 128, &aesKey);
+
+    // Encrypt & Decrypt using ECB
+    encryptECB(plaintext, ciphertext, &aesKey, len);
+    decryptECB(ciphertext, decrypted, &aesKey, len);
+    printf("Decrypted ECB: %s\n", decrypted);
+
+    // Encrypt & Decrypt using CBC
+    encryptCBC(plaintext, ciphertext, &aesKey, iv, len);
+    decryptCBC(ciphertext, decrypted, &aesKey, iv, len);
+    printf("Decrypted CBC: %s\n", decrypted);
+
+    // Encrypt & Decrypt using CFB
+    encryptCFB(plaintext, ciphertext, &aesKey, iv, len);
+    decryptCFB(ciphertext, decrypted, &aesKey, iv, len);
+    printf("Decrypted CFB: %s\n", decrypted);
+
+    return 0;
+}
