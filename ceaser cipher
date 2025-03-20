@@ -1,0 +1,73 @@
+C=(P+k)mod26
+P=(C-K)mod26
+
+
+
+//*START
+  //INPUT: Plaintext message
+  //INPUT: Shift value (k)
+  //FOR each character in the message:
+    //IF character is uppercase:
+      //Shift within 'A' to 'Z'
+    //ELSE IF character is lowercase:
+      //Shift within 'a' to 'z'
+    //ELSE:
+    //  Keep character unchanged
+  //PRINT the encrypted message
+//END
+
+
+#include <stdio.h>
+#include <ctype.h>
+
+void caesarCipher(char message[], int key) {
+    for (int i = 0; message[i] != '\0'; i++) {
+        char ch = message[i];
+        if (isupper(ch)) {
+            message[i] = ((ch - 'A' + key) % 26) + 'A';
+        } else if (islower(ch)) {
+            message[i] = ((ch - 'a' + key) % 26) + 'a';
+        }
+    }
+}
+
+int main() {
+    char message[100];
+    int key;
+    
+    printf("Enter a message: ");
+    fgets(message, sizeof(message), stdin);
+
+    printf("Enter shift value (1-25): ");
+    scanf("%d", &key);
+
+    caesarCipher(message, key);
+
+    printf("Encrypted message: %s\n", message);
+    return 0;
+}
+
+
+
+Caeser CIpher 
+def caesar_cipher(message, key):
+    encrypted_message = ""
+
+    for ch in message:
+        if ch.isupper():
+            encrypted_message += chr(((ord(ch) - ord('A') + key) % 26) + ord('A'))
+        elif ch.islower():
+            encrypted_message += chr(((ord(ch) - ord('a') + key) % 26) + ord('a'))
+        else:
+            encrypted_message += ch  # Keep spaces and other characters unchanged
+    
+    return encrypted_message
+
+# Taking input from user
+message = input("Enter a message: ")
+key = int(input("Enter shift value (1-25): "))
+
+# Encrypting the message
+encrypted_message = caesar_cipher(message, key)
+
+print("Encrypted message:", encrypted_message)
