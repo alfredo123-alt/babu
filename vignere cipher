@@ -1,0 +1,136 @@
+Ci=(Pi+Ki)mod26
+Pi=(Ci−Ki+26)mod26
+
+START  
+INPUT plaintext  
+GENERATE random key for each letter  
+FOR each letter in plaintext:  
+    CONVERT letter to number (A=0, B=1, ..., Z=25)  
+    APPLY encryption formula: C = (P + K) mod 26  
+    CONVERT result back to letter  
+PRINT ciphertext  
+
+FOR decryption:  
+    APPLY decryption formula: P = (C - K + 26) mod 26  
+PRINT decrypted text  
+STOP  
+
+
+  #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <ctype.h>
+
+// Function to generate a random key between 0 and 25
+void generateKey(int key[], int length) {
+    for (int i = 0; i < length; i++) {
+        key[i] = rand() % 26;
+    }
+}
+
+// Encrypt the plaintext using the generated key
+void encrypt(char plaintext[], char ciphertext[], int key[]) {
+    for (int i = 0; plaintext[i] != '\0'; i++) {
+        if (isalpha(plaintext[i])) {
+            char base = isupper(plaintext[i]) ? 'A' : 'a';
+            ciphertext[i] = ((plaintext[i] - base + key[i]) % 26) + base;
+        } else {
+            ciphertext[i] = plaintext[i];  // Keep spaces/symbols unchanged
+        }
+    }
+    ciphertext[strlen(plaintext)] = '\0';  // Null terminate string
+}
+
+// Decrypt the ciphertext using the same key
+void decrypt(char ciphertext[], char decrypted[], int key[]) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        if (isalpha(ciphertext[i])) {
+            char base = isupper(ciphertext[i]) ? 'A' : 'a';
+            decrypted[i] = ((ciphertext[i] - base - key[i] + 26) % 26) + base;
+        } else {
+            decrypted[i] = ciphertext[i];  // Keep spaces/symbols unchanged
+        }
+    }
+    decrypted[strlen(ciphertext)] = '\0';  // Null terminate string
+}
+
+int main() {
+    char plaintext[100], ciphertext[100], decrypted[100];
+    int key[100];
+
+    // Seed random number generator
+    srand(time(NULL));
+
+    // Input plaintext
+    printf("Enter plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0'; // Remove newline character
+
+    // Generate a random key for each character
+    generateKey(key, strlen(plaintext));
+
+    // Encrypt the plaintext
+    encrypt(plaintext, ciphertext, key);
+    printf("Encrypted Text: %s\n", ciphertext);
+
+    // Decrypt the ciphertext
+    decrypt(ciphertext, decrypted, key);
+    printf("Decrypted Text: %s\n", decrypted);
+
+    // Print the key values
+    printf("Generated Key: ");
+    for (int i = 0; i < strlen(plaintext); i++) {
+        if (isalpha(plaintext[i])) {
+            printf("%d ", key[i]);
+        } else {
+            printf("- "); // Placeholder for spaces/non-alphabetic characters
+        }
+    }
+    printf("\n");
+
+    return 0;
+}
+
+
+Vignere Cipher
+import random
+
+# Function to generate a random key of given length
+def generate_key(length):
+    return [random.randint(0, 25) for _ in range(length)]
+
+# Function to encrypt the plaintext using the key
+def encrypt(plaintext, key):
+    plaintext = plaintext.upper().replace(" ", "")  # Convert to uppercase and remove spaces
+    ciphertext = ""
+
+    for i in range(len(plaintext)):
+        shift = key[i]  # Get the shift value from the key
+        new_char = chr(((ord(plaintext[i]) - ord('A') + shift) % 26) + ord('A'))
+        ciphertext += new_char
+
+    return ciphertext
+
+# Function to decrypt the ciphertext using the key
+def decrypt(ciphertext, key):
+    decrypted_text = ""
+
+    for i in range(len(ciphertext)):
+        shift = key[i]  # Get the shift value from the key
+        new_char = chr(((ord(ciphertext[i]) - ord('A') - shift) % 26) + ord('A'))
+        decrypted_text += new_char
+
+    return decrypted_text
+
+# Main program
+plaintext = input("Enter plaintext (A-Z only, no spaces): ").upper().replace(" ", "")
+key = generate_key(len(plaintext))  # Generate a random key of the same length as plaintext
+
+ciphertext = encrypt(plaintext, key)
+decrypted_text = decrypt(ciphertext, key)
+
+# Print results
+print("Generated Key: ", key)
+print("Encrypted Text: ", ciphertext)
+print("Decrypted Text: ", decrypted_text)
