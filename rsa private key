@@ -1,0 +1,80 @@
+START  
+1. INPUT public key (e = 31, n = 3599)  
+2. FIND p and q such that p × q = n  
+3. COMPUTE Euler’s totient function: φ(n) = (p - 1) × (q - 1)  
+4. APPLY Extended Euclidean Algorithm to find d:  
+     - Solve for d where (e × d) ≡ 1 (mod φ(n))  
+5. PRINT private key d  
+STOP  
+
+
+#include <stdio.h>
+
+// Function to compute GCD using the Extended Euclidean Algorithm
+int extendedGCD(int a, int b, int *x, int *y) {
+    if (a == 0) {
+        *x = 0, *y = 1;
+        return b;
+    }
+    int x1, y1;
+    int gcd = extendedGCD(b % a, a, &x1, &y1);
+    *x = y1 - (b / a) * x1;
+    *y = x1;
+    return gcd;
+}
+
+// Function to compute modular inverse using Extended Euclidean Algorithm
+int modularInverse(int e, int phi) {
+    int x, y;
+    int gcd = extendedGCD(e, phi, &x, &y);
+    if (gcd != 1) {
+        printf("Inverse does not exist\n");
+        return -1;
+    } else {
+        int result = (x % phi + phi) % phi; // Ensure positive d
+        return result;
+    }
+}
+
+int main() {
+    int e = 31, n = 3599, p = 59, q = 61;
+    int phi = (p - 1) * (q - 1); // Compute φ(n)
+
+    printf("Euler’s Totient (phi): %d\n", phi);
+
+    int d = modularInverse(e, phi);
+    if (d != -1) {
+        printf("Private Key (d): %d\n", d);
+    }
+
+    return 0;
+}
+
+
+# Function to compute GCD and modular inverse using Extended Euclidean Algorithm
+def extended_gcd(a, b):
+    if a == 0:
+        return b, 0, 1
+    gcd, x1, y1 = extended_gcd(b % a, a)
+    x = y1 - (b // a) * x1
+    y = x1
+    return gcd, x, y
+
+# Function to compute modular inverse
+def modular_inverse(e, phi):
+    gcd, x, _ = extended_gcd(e, phi)
+    if gcd != 1:
+        raise ValueError("Inverse does not exist")
+    return x % phi  # Ensure positive d
+
+# RSA parameters
+e = 31
+n = 3599
+p, q = 59, 61  # Find primes such that p * q = n
+phi = (p - 1) * (q - 1)  # Compute φ(n)
+
+print(f"Euler’s Totient (phi): {phi}")
+
+# Compute private key d
+d = modular_inverse(e, phi)
+print(f"Private Key (d): {d}")
